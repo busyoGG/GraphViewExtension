@@ -591,7 +591,7 @@ namespace GraphViewExtension
                             {
                                 SliderInt slider = new SliderInt(int.Parse(extra[1]), int.Parse(extra[2]));
 
-                                num.text = extra[2];
+                                num.text = extra[1];
 
                                 slider.value = 0;
                                 slider.style.flexGrow = 1;
@@ -608,7 +608,7 @@ namespace GraphViewExtension
                             {
                                 Slider slider = new Slider(float.Parse(extra[0]), float.Parse(extra[1]));
 
-                                num.text = extra[1];
+                                num.text = extra[0];
 
                                 slider.value = 0;
                                 slider.style.flexGrow = 1;
