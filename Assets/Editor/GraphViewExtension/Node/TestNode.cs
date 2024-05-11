@@ -22,12 +22,17 @@ namespace GraphViewExtension
         [GraphNode(NodeTypeEnum.Radio, "选项1", "选项2")]
         private int _radio;
 
-        
-        [GraphNode(NodeTypeEnum.Box, "2")]
-        private string _box = "";
-        [GraphNode(NodeTypeEnum.Toggle, "选择1"),GWidth(100,LengthUnit.Pixel)] private bool _toggle1;
-        [GraphNode(NodeTypeEnum.Toggle, "选择2"),GWidth(100,LengthUnit.Pixel)] private bool _toggle2;
-        [GraphNode(NodeTypeEnum.Toggle, "选择3")] private bool _toggle3;
+
+        [GraphNode(NodeTypeEnum.Box, "2")] private string _box = "";
+
+        [GraphNode(NodeTypeEnum.Toggle, "选择1"), GWidth(100, LengthUnit.Pixel)]
+        private bool _toggle1;
+
+        [GraphNode(NodeTypeEnum.Toggle, "选择2"), GWidth(100, LengthUnit.Pixel)]
+        private bool _toggle2;
+
+        [GraphNode(NodeTypeEnum.Toggle, "选择3")]
+        private bool _toggle3;
 
         protected override void InitConfig()
         {
@@ -36,7 +41,15 @@ namespace GraphViewExtension
 
         protected override void SetData()
         {
-            _data.extra = "添加一条额外数据";
+            _data.desc = _desc;
+        }
+
+        protected override void ResetData()
+        {
+            if (_isSet)
+            {
+                _desc = _data.desc;
+            }
         }
     }
 }

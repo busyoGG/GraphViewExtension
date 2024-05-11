@@ -56,7 +56,7 @@ namespace GraphViewExtension
                 bool res = EditorUtility.DisplayDialog("打开新文件", "是否打开一个新的文件，当前内容未保存的部分会消失。", "确定", "取消");
                 if (res)
                 {
-                    _view.Clear();
+                    _view.ClearGraph();
                 }
                 else
                 {
@@ -125,7 +125,7 @@ namespace GraphViewExtension
 
         private void Close()
         {
-            _view.Clear();
+            _view.ClearGraph();
         }
     }
 }

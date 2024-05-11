@@ -73,6 +73,11 @@ namespace GraphViewExtension
         private bool _isBordered = false;
 
         /// <summary>
+        /// 之前的状态是否描边
+        /// </summary>
+        private bool _lastBordered = false;
+
+        /// <summary>
         /// 默认字体尺寸
         /// </summary>
         private int _fontSize = 16;
@@ -108,7 +113,12 @@ namespace GraphViewExtension
         /// 节点数据
         /// </summary>
         protected dynamic _data = new ExpandoObject();
-        
+
+        /// <summary>
+        /// 是否设置了数据
+        /// </summary>
+        protected bool _isSet = false;
+
         /// <summary>
         /// 数据节点
         /// </summary>
@@ -120,7 +130,7 @@ namespace GraphViewExtension
 
             //生成唯一标识
             guid = GUID.Generate().ToString();
-            
+
             //添加输入端口
             _inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(Node));
             _inputPort.portName = "Parent";
@@ -141,7 +151,9 @@ namespace GraphViewExtension
             // _defWidth = titleContainer.layout.width;
             _defPos = layout.position;
 
+            ResetData();
             Init();
+
             schedule.Execute(() =>
             {
                 UpdateNodeSize();
@@ -152,6 +164,16 @@ namespace GraphViewExtension
             RefreshPorts();
 
             UnregisterCallback<GeometryChangedEvent>(OnEnable);
+        }
+
+        /// <summary>
+        /// 设置数据
+        /// </summary>
+        /// <param name="data"></param>
+        public void SetData(ExpandoObject data)
+        {
+            _data = data;
+            _isSet = true;
         }
 
         public void SetSize(Vector2 size)
@@ -281,9 +303,10 @@ namespace GraphViewExtension
                 RootNode node = edge.input.node as RootNode;
                 _dataNode.AddChild(node?.SaveData());
             }
+
             return _dataNode;
         }
-        
+
         /// <summary>
         /// 设置描边颜色，最好是在所有初始化完成后再调用
         /// </summary>
@@ -308,6 +331,17 @@ namespace GraphViewExtension
             if (_inited)
             {
                 UpdateBorderSize();
+            }
+        }
+
+        /// <summary>
+        /// 移除连线
+        /// </summary>
+        public void RemoveEdges()
+        {
+            foreach (var edge in _outputPort.connections)
+            {
+                _graph.RemoveElement(edge);
             }
         }
 
@@ -360,7 +394,7 @@ namespace GraphViewExtension
         private void Init()
         {
             InitConfig();
-            
+
             //添加GUID
             Label lbGuid = new Label(guid);
             lbGuid.style.position = Position.Absolute;
@@ -401,12 +435,14 @@ namespace GraphViewExtension
                     //辅助名称
                     GName gName = field.GetCustomAttribute<GName>();
                     string fieldName = field.Name.Replace("_", "");
-                    string subName = gName != null ? gName.GetName() : fieldName.Substring(0,1).ToUpper() + fieldName.Substring(1);
-                    
+                    string subName = gName != null
+                        ? gName.GetName()
+                        : fieldName.Substring(0, 1).ToUpper() + fieldName.Substring(1);
+
                     //容器宽度
                     GWidth gWidth = field.GetCustomAttribute<GWidth>();
                     Length len = gWidth != null ? gWidth.GetLength() : new Length(96, LengthUnit.Percent);
-                    
+
                     if (boxCount == 0)
                     {
                         box = new VisualElement();
@@ -593,7 +629,7 @@ namespace GraphViewExtension
 
                             RadioButtonGroup radioButtonGroup = new RadioButtonGroup();
                             radioButtonGroup.value = 0;
-                            
+
                             ele.Add(radioButtonGroup);
 
                             foreach (var selection in extra)
@@ -740,8 +776,11 @@ namespace GraphViewExtension
 
                 _defPos = new Vector2(style.left.value.value, style.top.value.value);
 
-                style.left = _defPos.x - _borderOffset * 0.5f;
-                style.top = _defPos.y - _borderOffset * 0.5f;
+                if (_lastBordered != _isBordered)
+                {
+                    style.left = _defPos.x - _borderOffset * 0.5f;
+                    style.top = _defPos.y - _borderOffset * 0.5f;
+                }
             }
             else
             {
@@ -759,6 +798,8 @@ namespace GraphViewExtension
                 style.left = _defPos.x;
                 style.top = _defPos.y;
             }
+
+            _lastBordered = _isBordered;
         }
 
         /// <summary>
@@ -773,6 +814,13 @@ namespace GraphViewExtension
         /// 保存数据
         /// </summary>
         protected virtual void SetData()
+        {
+        }
+
+        /// <summary>
+        /// 还原数据
+        /// </summary>
+        protected virtual void ResetData()
         {
         }
     }

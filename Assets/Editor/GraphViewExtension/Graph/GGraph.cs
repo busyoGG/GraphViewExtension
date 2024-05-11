@@ -48,8 +48,6 @@ namespace GraphViewExtension
 
         private Dictionary<string, RootNode> _allNodes = new Dictionary<string, RootNode>();
 
-        private List<Edge> _allEdges = new List<Edge>();
-
 
         public GGraph(EditorWindow editorWindow, GSearchWindow provider)
         {
@@ -148,9 +146,14 @@ namespace GraphViewExtension
                     }
                     else
                     {
-                        while (currentSelection != null && currentSelection is not RootNode &&
-                               !IsInputField(currentSelection))
+                        bool isInput = false;
+                        while (currentSelection != null && currentSelection is not RootNode)
                         {
+                            if (IsInputField(currentSelection))
+                            {
+                                isInput = true;
+                                break;
+                            }
                             currentSelection = currentSelection.parent;
                         }
 
@@ -164,13 +167,9 @@ namespace GraphViewExtension
                         }
                         else
                         {
-                            while (currentSelection != null && currentSelection is not RootNode)
-                            {
-                                currentSelection = currentSelection.parent;
-                            }
-
-                            if (currentSelection == null || _clickNode != null && currentSelection != _clickNode &&
-                                currentSelection is not RootNode)
+                            if (isInput) return;
+                            
+                            if (_clickNode != null && currentSelection != _clickNode && currentSelection is not RootNode)
                             {
                                 _clickNode.UnSelected();
                                 _clickNode = null;
@@ -247,25 +246,19 @@ namespace GraphViewExtension
             edge?.input.Connect(edge);
             edge?.output.Connect(edge);
             AddElement(edge);
-            _allEdges.Add(edge);
             return edge;
         }
 
-        public void Clear()
+        public void ClearGraph()
         {
             foreach (var node in _allNodes)
             {
+                node.Value.RemoveEdges();
                 RemoveElement(node.Value);
             }
 
             _allNodes.Clear();
-
-            foreach (var edge in _allEdges)
-            {
-                RemoveElement(edge);
-            }
-
-            _allEdges.Clear();
+            
             _isOpen = false;
 
             _filePath = "";
@@ -279,7 +272,22 @@ namespace GraphViewExtension
         private bool IsInputField(VisualElement element)
         {
             // 判断元素是否是BaseField<T>或其派生类的实例
-            return element.GetType().BaseType.IsGenericType;
+            return HasBaseField(element.GetType());
+        }
+        
+        bool HasBaseField(Type type)
+        {
+            if (type.Name.IndexOf("BaseField") != -1)
+            {
+                return true;
+            }
+            // 检查当前类型的基类的字段
+            if (type.BaseType != null)
+            {
+                return HasBaseField(type.BaseType);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -330,6 +338,8 @@ namespace GraphViewExtension
                 RootNode newNode = CreateNode(type, nodeData.guid,
                     new Vector2(float.Parse(pos[0]), float.Parse(pos[1])),
                     new Vector2(float.Parse(size[0]), float.Parse(size[1])));
+                
+                newNode.SetData(nodeData);
 
                 if (parent != null)
                 {
