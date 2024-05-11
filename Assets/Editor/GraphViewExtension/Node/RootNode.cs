@@ -51,11 +51,11 @@ namespace GraphViewExtension
         /// 默认高度
         /// </summary>
         private float _defHeight;
-
-        /// <summary>
-        /// 默认宽度
-        /// </summary>
-        private float _defWidth;
+        //
+        // /// <summary>
+        // /// 默认宽度
+        // /// </summary>
+        // private float _defWidth;
 
         /// <summary>
         /// 鼠标按下时坐标
@@ -105,11 +105,6 @@ namespace GraphViewExtension
         //----- 描边颜色 ------ end
 
         /// <summary>
-        /// 节点类型
-        /// </summary>
-        protected string _NodeType = "None";
-
-        /// <summary>
         /// 节点数据
         /// </summary>
         protected dynamic _data = new ExpandoObject();
@@ -121,14 +116,11 @@ namespace GraphViewExtension
 
         public RootNode()
         {
+            _type = GetType();
+
             //生成唯一标识
             guid = GUID.Generate().ToString();
-            Label lbGuid = new Label(guid);
-            lbGuid.style.position = Position.Absolute;
-            lbGuid.style.top = -20;
-            lbGuid.style.alignSelf = Align.Center;
-            Add(lbGuid);
-
+            
             //添加输入端口
             _inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(Node));
             _inputPort.portName = "Parent";
@@ -146,7 +138,7 @@ namespace GraphViewExtension
         {
             Debug.Log("创建完成，开始渲染  " + layout.size);
             _defHeight = titleContainer.layout.height + _outputPort.layout.height;
-            _defWidth = titleContainer.layout.width;
+            // _defWidth = titleContainer.layout.width;
             _defPos = layout.position;
 
             Init();
@@ -174,6 +166,16 @@ namespace GraphViewExtension
             _graph = graph;
             _graph.RegisterCallback<MouseMoveEvent>(ResizeMove);
             _graph.RegisterCallback<MouseUpEvent>(ResizeEnd);
+        }
+
+        public Port GetInput()
+        {
+            return _inputPort;
+        }
+
+        public Port GetOutput()
+        {
+            return _outputPort;
         }
 
         /// <summary>
@@ -266,7 +268,10 @@ namespace GraphViewExtension
         /// <returns></returns>
         public GDataNode SaveData()
         {
-            _data.type = _NodeType;
+            _data.guid = guid;
+            _data.pos = _defPos.ToString();
+            _data.size = (_curSize.Equals(Vector2.zero) ? _defSize : _curSize).ToString();
+            _dataNode.SetNodeType(_type.FullName);
             SetData();
             _dataNode.SetData(_data);
             //遍历节点
@@ -274,7 +279,7 @@ namespace GraphViewExtension
             foreach (var edge in connections)
             {
                 RootNode node = edge.input.node as RootNode;
-                _dataNode.AddChild(node.SaveData());
+                _dataNode.AddChild(node?.SaveData());
             }
             return _dataNode;
         }
@@ -355,6 +360,13 @@ namespace GraphViewExtension
         private void Init()
         {
             InitConfig();
+            
+            //添加GUID
+            Label lbGuid = new Label(guid);
+            lbGuid.style.position = Position.Absolute;
+            lbGuid.style.top = -20;
+            lbGuid.style.alignSelf = Align.Center;
+            Add(lbGuid);
             //获得类型
             _type = GetType();
 
@@ -663,7 +675,7 @@ namespace GraphViewExtension
         /// 刷新尺寸
         /// </summary>
         /// <param name="size"></param>
-        private void UpdateSize(Vector2 size)
+        public void UpdateSize(Vector2 size)
         {
             style.width = size.x;
             style.height = size.y;
@@ -689,7 +701,7 @@ namespace GraphViewExtension
                 float contentHeight = _defHeight + extensionContainer.layout.height + 10;
 
                 // 设置 Node 的新高度
-                SetSize(new Vector2(_defWidth, contentHeight));
+                SetSize(new Vector2(_defSize.x, contentHeight));
                 DrawBorder();
             }
         }

@@ -19,10 +19,15 @@ namespace GraphViewExtension
 
 
         /// <summary>
+        /// 是否打开一个文件
+        /// </summary>
+        private bool _isOpen = false;
+
+        /// <summary>
         /// 是否在选择
         /// </summary>
         private bool _isSelect = false;
-        
+
         /// <summary>
         /// 鼠标是否按下
         /// </summary>
@@ -34,6 +39,8 @@ namespace GraphViewExtension
         private bool _isMoved = false;
 
         private Dictionary<string, RootNode> _allNodes = new Dictionary<string, RootNode>();
+
+        private List<Edge> _allEdges = new List<Edge>();
 
 
         public BhTreeGraph(EditorWindow editorWindow, BhSearchWindow provider)
@@ -90,7 +97,8 @@ namespace GraphViewExtension
             this.AddManipulator(new RectangleSelector());
 
             //加载样式表和网格
-            var styleSheet = EditorGUIUtility.Load("Assets/Editor/GraphViewExtension/Graph/GridBackground.uss") as StyleSheet;
+            var styleSheet =
+                EditorGUIUtility.Load("Assets/Editor/GraphViewExtension/Graph/GridBackground.uss") as StyleSheet;
             styleSheets.Add(styleSheet);
             var grid = new GridBackground();
             Insert(0, grid);
@@ -152,8 +160,9 @@ namespace GraphViewExtension
                             {
                                 currentSelection = currentSelection.parent;
                             }
-                            
-                            if (currentSelection == null || _clickNode != null && currentSelection != _clickNode && currentSelection is not RootNode)
+
+                            if (currentSelection == null || _clickNode != null && currentSelection != _clickNode &&
+                                currentSelection is not RootNode)
                             {
                                 _clickNode.UnSelected();
                                 _clickNode = null;
@@ -198,7 +207,24 @@ namespace GraphViewExtension
             node.RegistResize(this);
             node.SetSize(_defaultNodeSize);
             AddElement(node);
-            _allNodes.Add(node.guid,node);
+            _allNodes.Add(node.guid, node);
+            return node;
+        }
+
+        public RootNode CreateNode(Type type, Vector2 position, Vector2 size)
+        {
+            RootNode node = Activator.CreateInstance(type) as RootNode;
+            //这里只用到了position
+            node.SetPosition(new Rect(position, Vector2.zero));
+            node.RegistResize(this);
+            node.SetSize(_defaultNodeSize);
+            node.UpdateSize(size);
+            AddElement(node);
+            _allNodes.Add(node.guid, node);
+            
+            //创建节点标记为打开文件
+            _isOpen = true;
+            
             return node;
         }
 
@@ -209,7 +235,24 @@ namespace GraphViewExtension
             edge?.input.Connect(edge);
             edge?.output.Connect(edge);
             AddElement(edge);
+            _allEdges.Add(edge);
             return edge;
+        }
+
+        public void Clear()
+        {
+            foreach (var node in _allNodes)
+            {
+                RemoveElement(node.Value);
+            }
+            _allNodes.Clear();
+
+            foreach (var edge in _allEdges)
+            {
+                RemoveElement(edge);
+            }
+            
+            _allEdges.Clear();
         }
 
         /// <summary>
@@ -241,6 +284,41 @@ namespace GraphViewExtension
             }
 
             return list;
+        }
+
+        
+        /// <summary>
+        /// 当前是否打开文件
+        /// </summary>
+        /// <returns></returns>
+        public bool GetOpen()
+        {
+            return _isOpen;
+        }
+
+        public void OpenData(List<GDataNode> datas, RootNode parent = null)
+        {
+            foreach (var data in datas)
+            {
+                Type type = Type.GetType(data.GetNodeType());
+                dynamic nodeData = data.GetData();
+
+                string[] pos = nodeData.pos.Trim('(', ')').Split(',');
+                string[] size = nodeData.size.Trim('(', ')').Split(',');
+
+                RootNode newNode = CreateNode(type, new Vector2(float.Parse(pos[0]), float.Parse(pos[1])),
+                    new Vector2(float.Parse(size[0]),float.Parse(size[1])));
+                
+                newNode.guid = nodeData.guid;
+
+                if (parent != null)
+                {
+                    //连线
+                    MakeEdge(parent.GetOutput(), newNode.GetInput());
+                }
+
+                OpenData(data.GetChildren(), newNode);
+            }
         }
     }
 }

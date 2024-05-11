@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine.NVIDIA;
 
 namespace GraphViewExtension
@@ -9,9 +11,16 @@ namespace GraphViewExtension
 
         private dynamic _data;
 
+        private string _type;
+
         public void SetData(dynamic data)
         {
             _data = data;
+        }
+
+        public void SetNodeType(string type)
+        {
+            _type = type;
         }
 
         public void AddChild(GDataNode node)
@@ -30,6 +39,11 @@ namespace GraphViewExtension
         public dynamic GetData()
         {
             return _data;
+        }
+
+        public string GetNodeType()
+        {
+            return _type;
         }
     }
 }

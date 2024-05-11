@@ -32,7 +32,6 @@ namespace GraphViewExtension
         protected override void InitConfig()
         {
             title = "测试节点";
-            _NodeType = "Test";
         }
 
         protected override void SetData()
