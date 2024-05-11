@@ -13,7 +13,7 @@ namespace GraphViewExtension
 
     public class RootNode : Node
     {
-        private BhTreeGraph _graph;
+        private GGraph _graph;
         Port _inputPort;
         Port _outputPort;
 
@@ -161,7 +161,7 @@ namespace GraphViewExtension
             _defSize = size;
         }
 
-        public void RegistResize(BhTreeGraph graph)
+        public void RegistResize(GGraph graph)
         {
             _graph = graph;
             _graph.RegisterCallback<MouseMoveEvent>(ResizeMove);

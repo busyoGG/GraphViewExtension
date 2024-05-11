@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
+using System.IO;
+using Unity.Plastic.Newtonsoft.Json;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -7,16 +11,20 @@ using UnityEngine.UIElements;
 
 namespace GraphViewExtension
 {
-    public class BhTreeGraph : GraphView
+    public class GGraph : GraphView
     {
         private EditorWindow _editorWindow;
 
-        private BhSearchWindow _seachWindow;
+        private GSearchWindow _seachWindow;
 
         private Vector2 _defaultNodeSize = new Vector2(200, 102);
 
         private RootNode _clickNode;
 
+        /// <summary>
+        /// 打开的文件路径
+        /// </summary>
+        private string _filePath = "";
 
         /// <summary>
         /// 是否打开一个文件
@@ -43,7 +51,7 @@ namespace GraphViewExtension
         private List<Edge> _allEdges = new List<Edge>();
 
 
-        public BhTreeGraph(EditorWindow editorWindow, BhSearchWindow provider)
+        public GGraph(EditorWindow editorWindow, GSearchWindow provider)
         {
             _editorWindow = editorWindow;
             _seachWindow = provider;
@@ -180,6 +188,9 @@ namespace GraphViewExtension
                 _isMoved = false;
                 _isDown = false;
             });
+
+            //监听保存组合键
+            RegisterCallback<KeyUpEvent>(OnKeyUp);
         }
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
@@ -211,7 +222,7 @@ namespace GraphViewExtension
             return node;
         }
 
-        public RootNode CreateNode(Type type, Vector2 position, Vector2 size)
+        public RootNode CreateNode(Type type, string guid, Vector2 position, Vector2 size)
         {
             RootNode node = Activator.CreateInstance(type) as RootNode;
             //这里只用到了position
@@ -220,11 +231,12 @@ namespace GraphViewExtension
             node.SetSize(_defaultNodeSize);
             node.UpdateSize(size);
             AddElement(node);
-            _allNodes.Add(node.guid, node);
-            
+            node.guid = guid;
+            _allNodes.Add(guid, node);
+
             //创建节点标记为打开文件
             _isOpen = true;
-            
+
             return node;
         }
 
@@ -245,14 +257,18 @@ namespace GraphViewExtension
             {
                 RemoveElement(node.Value);
             }
+
             _allNodes.Clear();
 
             foreach (var edge in _allEdges)
             {
                 RemoveElement(edge);
             }
-            
+
             _allEdges.Clear();
+            _isOpen = false;
+
+            _filePath = "";
         }
 
         /// <summary>
@@ -286,7 +302,7 @@ namespace GraphViewExtension
             return list;
         }
 
-        
+
         /// <summary>
         /// 当前是否打开文件
         /// </summary>
@@ -294,6 +310,11 @@ namespace GraphViewExtension
         public bool GetOpen()
         {
             return _isOpen;
+        }
+
+        public void SetFilePath(string filePath)
+        {
+            _filePath = filePath;
         }
 
         public void OpenData(List<GDataNode> datas, RootNode parent = null)
@@ -306,10 +327,9 @@ namespace GraphViewExtension
                 string[] pos = nodeData.pos.Trim('(', ')').Split(',');
                 string[] size = nodeData.size.Trim('(', ')').Split(',');
 
-                RootNode newNode = CreateNode(type, new Vector2(float.Parse(pos[0]), float.Parse(pos[1])),
-                    new Vector2(float.Parse(size[0]),float.Parse(size[1])));
-                
-                newNode.guid = nodeData.guid;
+                RootNode newNode = CreateNode(type, nodeData.guid,
+                    new Vector2(float.Parse(pos[0]), float.Parse(pos[1])),
+                    new Vector2(float.Parse(size[0]), float.Parse(size[1])));
 
                 if (parent != null)
                 {
@@ -319,6 +339,99 @@ namespace GraphViewExtension
 
                 OpenData(data.GetChildren(), newNode);
             }
+        }
+
+
+        private void OnKeyUp(KeyUpEvent evt)
+        {
+            // 检查是否按下了 Ctrl 键和 S 键
+            if (evt.keyCode == KeyCode.S && evt.ctrlKey)
+            {
+                if (_filePath == "") return;
+
+                Debug.Log("Ctrl + S pressed. Saving...");
+                // 执行保存操作
+                List<GDataNode> list = SaveData();
+
+                List<SaveJson> listJson = new List<SaveJson>();
+
+                foreach (var data in list)
+                {
+                    listJson.Add(ToJson(data));
+                }
+
+                string jsonData = JsonConvert.SerializeObject(listJson);
+
+                FileInfo myFile = new FileInfo(_filePath);
+                StreamWriter sw = myFile.CreateText();
+
+                foreach (var s in jsonData)
+                {
+                    sw.Write(s);
+                }
+
+                sw.Close();
+                // 这里可以添加你的保存逻辑
+                evt.StopPropagation(); // 阻止事件传递，避免触发其他事件
+            }
+        }
+
+        /// <summary>
+        /// 转换为JSON
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public SaveJson ToJson(GDataNode data)
+        {
+            SaveJson save = new SaveJson();
+            save.type = data.GetNodeType();
+            save.data = data.GetData();
+
+            foreach (var child in data.GetChildren())
+            {
+                save.children.Add(ToJson(child));
+            }
+
+            return save;
+        }
+
+        /// <summary>
+        /// 转换为节点数据
+        /// </summary>
+        /// <param name="json"></param>
+        /// <returns></returns>
+        public GDataNode ToGDataNode(SaveJson json)
+        {
+            GDataNode data = new GDataNode();
+            data.SetNodeType(json.type);
+
+            dynamic obj = new ExpandoObject();
+
+            foreach (var res in (json.data as JObject).Properties())
+            {
+                JTokenType jType = res.Value.Type;
+                switch (jType)
+                {
+                    case JTokenType.String:
+                        ((IDictionary<string, object>)obj)[res.Name] = res.Value.Value<string>();
+                        break;
+                    case JTokenType.Float:
+                        ((IDictionary<string, object>)obj)[res.Name] = res.Value.Value<float>();
+                        break;
+                    case JTokenType.Boolean:
+                        ((IDictionary<string, object>)obj)[res.Name] = res.Value.Value<bool>();
+                        break;
+                }
+            }
+
+            data.SetData(obj);
+
+            foreach (var child in json.children)
+            {
+                data.AddChild(ToGDataNode(child));
+            }
+
+            return data;
         }
     }
 }

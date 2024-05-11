@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace GraphViewExtension
 {
-    public class BhSearchWindow: ScriptableObject,ISearchWindowProvider
+    public class GSearchWindow: ScriptableObject,ISearchWindowProvider
     {
         public delegate bool SelectHandle(SearchTreeEntry searchTreeEntry,
             SearchWindowContext context);
