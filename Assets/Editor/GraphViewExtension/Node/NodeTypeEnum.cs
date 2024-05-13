@@ -6,11 +6,11 @@
         Input,
         Note,
         Enum,
-        Color,
-        Texture,
         Slide,
         Toggle,
         Radio,
-        Box
+        Box,
+        Color,
+        Texture
     }
 }

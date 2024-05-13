@@ -16,13 +16,13 @@ namespace GraphViewExtension
 
         public SelectHandle onSelectEntryHandler;
 
-        private bool _inited = false;
+        private bool _inited;
 
         private JArray _menu;
         
         public List<SearchTreeEntry> entries = new List<SearchTreeEntry>()
         {
-            new SearchTreeGroupEntry(new GUIContent("Create Node"))
+            new SearchTreeGroupEntry(new GUIContent("创建节点"))
         };
         
         private void BuildTree()
@@ -34,10 +34,6 @@ namespace GraphViewExtension
                 CreateMenu(token);
             }
             
-            // entries.Add(new SearchTreeEntry(new GUIContent("测试节点")){level = 1,userData = typeof(TestNode)});
-            // entries.Add(new SearchTreeEntry(new GUIContent("成功节点")){level = 1,userData = typeof(DNodeSuccess)});
-            // entries.Add(new SearchTreeEntry(new GUIContent("失败节点")){level = 1,userData = typeof(DNodeFail)});
-            // entries.Add(new SearchTreeEntry(new GUIContent("反转节点")){level = 1,userData = typeof(DNodeReverse)});
             _inited = true;
         }
 
@@ -67,7 +63,6 @@ namespace GraphViewExtension
             {
                 entries.Add(new SearchTreeEntry(new GUIContent(menuName)){level = level,userData = Type.GetType(menuType)});
             }
-            
         }
         
         public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)

@@ -13,13 +13,22 @@ namespace GraphViewExtension
 
     public class RootNode : Node
     {
+        /// <summary>
+        /// 所属的GraphView
+        /// </summary>
         private GGraph _graph;
         Port _inputPort;
         Port _outputPort;
 
+        /// <summary>
+        /// 反射范围标记
+        /// </summary>
         private readonly BindingFlags _flag = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static |
                                               BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
+        /// <summary>
+        /// 唯一标识符
+        /// </summary>
         public string guid;
 
         /// <summary>
@@ -51,11 +60,6 @@ namespace GraphViewExtension
         /// 默认高度
         /// </summary>
         private float _defHeight;
-        //
-        // /// <summary>
-        // /// 默认宽度
-        // /// </summary>
-        // private float _defWidth;
 
         /// <summary>
         /// 鼠标按下时坐标
@@ -126,6 +130,7 @@ namespace GraphViewExtension
 
         public RootNode()
         {
+            title = "默认节点";
             _type = GetType();
 
             //生成唯一标识
@@ -140,29 +145,46 @@ namespace GraphViewExtension
             _outputPort.portName = "Child";
             outputContainer.Add(_outputPort);
 
+            //注册鼠标按下监听
             RegisterCallback<MouseDownEvent>(ResizeStart);
+            //注册界面改变监听
             RegisterCallback<GeometryChangedEvent>(OnEnable);
         }
 
+        /// <summary>
+        /// 界面改变回调
+        /// </summary>
+        /// <param name="evt"></param>
         private void OnEnable(GeometryChangedEvent evt)
         {
             Debug.Log("创建完成，开始渲染  " + layout.size);
+            //保存默认高度
             _defHeight = titleContainer.layout.height + _outputPort.layout.height;
-            // _defWidth = titleContainer.layout.width;
+            //保存默认位置
             _defPos = layout.position;
 
-            ResetData();
-            Init();
+            //如果设置了数据（即通过打开文件创建的节点），则把数据填充到UI
+            if (_isSet)
+            {
+                ResetData();
+            }
 
+            //初始化UI
+            Init();
+            CustomUI();
+
+            //延迟更新节点大小
             schedule.Execute(() =>
             {
                 UpdateNodeSize();
                 _inited = true;
             }).StartingIn(1);
+            
             //刷新 不然会有显示BUG
             RefreshExpandedState();
             RefreshPorts();
 
+            //注销界面改变监听，使该方法只执行一次
             UnregisterCallback<GeometryChangedEvent>(OnEnable);
         }
 
@@ -176,6 +198,10 @@ namespace GraphViewExtension
             _isSet = true;
         }
 
+        /// <summary>
+        /// 设置尺寸，该方法会保存默认尺寸
+        /// </summary>
+        /// <param name="size"></param>
         public void SetSize(Vector2 size)
         {
             style.width = size.x;
@@ -183,6 +209,12 @@ namespace GraphViewExtension
             _defSize = size;
         }
 
+        /// <summary>
+        /// 在GraphView注册鼠标移动和抬起事件
+        /// 用于节点界面尺寸的修改
+        /// 在GraphView是为了能够在节点外响应事件
+        /// </summary>
+        /// <param name="graph"></param>
         public void RegistResize(GGraph graph)
         {
             _graph = graph;
@@ -190,11 +222,19 @@ namespace GraphViewExtension
             _graph.RegisterCallback<MouseUpEvent>(ResizeEnd);
         }
 
+        /// <summary>
+        /// 获取输入端口
+        /// </summary>
+        /// <returns></returns>
         public Port GetInput()
         {
             return _inputPort;
         }
 
+        /// <summary>
+        /// 获取输出端口
+        /// </summary>
+        /// <returns></returns>
         public Port GetOutput()
         {
             return _outputPort;
@@ -243,6 +283,10 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 选中节点描边
+        /// </summary>
+        /// <param name="leaf"></param>
         public void Selected(RootNode leaf = null)
         {
             if (leaf == null)
@@ -263,6 +307,9 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 取消选中节点描边
+        /// </summary>
         public void UnSelected()
         {
             SetBorder(_selectColor, 0);
@@ -290,13 +337,15 @@ namespace GraphViewExtension
         /// <returns></returns>
         public GDataNode SaveData()
         {
+            //保存基本数据
             _data.guid = guid;
             _data.pos = _defPos.ToString();
             _data.size = (_curSize.Equals(Vector2.zero) ? _defSize : _curSize).ToString();
             _dataNode.SetNodeType(_type.FullName);
+            //保存额外数据，用户自定义
             SetData();
             _dataNode.SetData(_data);
-            //遍历节点
+            //遍历子节点
             var connections = _outputPort.connections;
             foreach (var edge in connections)
             {
@@ -345,6 +394,10 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 节点尺寸调节鼠标按下回调
+        /// </summary>
+        /// <param name="evt"></param>
         private void ResizeStart(MouseDownEvent evt)
         {
             if (evt.button == 0)
@@ -359,6 +412,10 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 节点尺寸调节鼠标移动回调
+        /// </summary>
+        /// <param name="evt"></param>
         private void ResizeMove(MouseMoveEvent evt)
         {
             if (_isResizing)
@@ -372,6 +429,10 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 节点尺寸调节鼠标抬起回调
+        /// </summary>
+        /// <param name="evt"></param>
         private void ResizeEnd(MouseUpEvent evt)
         {
             if (_isResizing)
@@ -384,6 +445,11 @@ namespace GraphViewExtension
             _defPos = layout.position + new Vector2(_borderOffset * 0.5f, _borderOffset * 0.5f);
         }
 
+        /// <summary>
+        /// 是否在节点右下角区域
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private bool IsResizeArea(Vector2 position)
         {
             // 根据需要定义resizer区域，这里以右下角为例
@@ -391,6 +457,9 @@ namespace GraphViewExtension
                    position.y >= layout.height - 10f - _borderOffset;
         }
 
+        /// <summary>
+        /// 初始化UI
+        /// </summary>
         private void Init()
         {
             InitConfig();
@@ -412,16 +481,20 @@ namespace GraphViewExtension
             lbTitle.style.fontSize = 18;
             lbTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
 
+            //固定titleContainer大小
             titleContainer.style.minHeight = 25;
             titleContainer.style.maxHeight = 25;
 
+            //mainContainer着色
             mainContainer.style.backgroundColor = new Color(0.5f, 0.5f, 0.5f, 1f);
             mainContainer.style.color = Color.black;
             mainContainer.style.flexGrow = 1;
 
+            //extensionContainer自动高度
             extensionContainer.style.height = StyleKeyword.Auto;
             // extensionContainer.style.backgroundColor = new Color(0.55f, 1.00f, 0.78f, 0.8f);
 
+            //ui box 分割。没有box标签的情况下都在默认的第一个box中添加ui
             int boxCount = -1;
             var box = new VisualElement();
             extensionContainer.Add(box);
@@ -443,6 +516,7 @@ namespace GraphViewExtension
                     GWidth gWidth = field.GetCustomAttribute<GWidth>();
                     Length len = gWidth != null ? gWidth.GetLength() : new Length(96, LengthUnit.Percent);
 
+                    //判断是否需要增加ui box
                     if (boxCount == 0)
                     {
                         box = new VisualElement();
@@ -456,13 +530,16 @@ namespace GraphViewExtension
 
                     object value = field.GetValue(this);
 
+                    //添加当前UI类型的父容器
                     VisualElement ele = new VisualElement();
                     ele.style.width = len;
                     ele.style.marginTop = 8;
                     ele.style.alignSelf = Align.Center;
 
+                    //辅助标签
                     Label foreLabel;
 
+                    //非注释UI情况下，UI父容器底部描白边
                     if (attr.Type() != NodeTypeEnum.Note)
                     {
                         ele.style.borderBottomColor = Color.white;
@@ -470,10 +547,12 @@ namespace GraphViewExtension
                         ele.style.paddingBottom = 3;
                     }
 
+                    //设置值的委托函数
                     SetFieldDelegate setValue =
                         (SetFieldDelegate)Delegate.CreateDelegate(typeof(SetFieldDelegate), field, "SetValue", false);
 
                     string[] extra = attr.GetExtra();
+                    //创建UI
                     switch (attr.Type())
                     {
                         case NodeTypeEnum.Label:
@@ -501,6 +580,7 @@ namespace GraphViewExtension
                             ele.Add(text);
                             break;
                         case NodeTypeEnum.Note:
+                            //创建注释背景
                             ele.style.flexDirection = FlexDirection.Column;
                             ele.style.alignItems = Align.Center;
                             ele.style.justifyContent = Justify.Center;
@@ -510,6 +590,7 @@ namespace GraphViewExtension
                             ele.style.borderTopLeftRadius = 5;
                             ele.style.borderTopRightRadius = 5;
 
+                            //固定注释和可修改注释的情况
                             if (extra.Length > 0 && extra[0] == "Custom")
                             {
                                 TextField note = new TextField();
@@ -759,6 +840,9 @@ namespace GraphViewExtension
             }
         }
 
+        /// <summary>
+        /// 描边
+        /// </summary>
         private void DrawBorder()
         {
             if (_isBordered)
@@ -776,6 +860,7 @@ namespace GraphViewExtension
 
                 _defPos = new Vector2(style.left.value.value, style.top.value.value);
 
+                //如果没描过边，则调整节点坐标位置以防止错位
                 if (_lastBordered != _isBordered)
                 {
                     style.left = _defPos.x - _borderOffset * 0.5f;
@@ -795,6 +880,7 @@ namespace GraphViewExtension
                     style.height = _curSize.y;
                 }
 
+                //还原节点默认位置
                 style.left = _defPos.x;
                 style.top = _defPos.y;
             }
@@ -807,7 +893,6 @@ namespace GraphViewExtension
         /// </summary>
         protected virtual void InitConfig()
         {
-            title = "默认节点";
         }
 
         /// <summary>
@@ -822,6 +907,14 @@ namespace GraphViewExtension
         /// </summary>
         protected virtual void ResetData()
         {
+        }
+
+        /// <summary>
+        /// 自定义UI，如果有复杂的需求无法通过Attribute完成，则可以在这里拓展
+        /// </summary>
+        protected virtual void CustomUI()
+        {
+            
         }
     }
 }

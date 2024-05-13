@@ -46,10 +46,7 @@ namespace GraphViewExtension
 
         protected override void ResetData()
         {
-            if (_isSet)
-            {
-                _desc = _data.desc;
-            }
+            _desc = _data.desc;
         }
     }
 }
