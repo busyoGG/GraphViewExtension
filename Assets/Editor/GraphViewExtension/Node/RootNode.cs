@@ -717,6 +717,8 @@ namespace GraphViewExtension
                             radioButtonGroup.value = 0;
 
                             ele.Add(radioButtonGroup);
+                            
+                            int index = 0;
 
                             foreach (var selection in extra)
                             {
@@ -729,6 +731,13 @@ namespace GraphViewExtension
                                 radio.Add(lbRadio);
 
                                 radioButtonGroup.Add(radio);
+                                
+                                if (index == (int)value)
+                                {
+                                    radio.value = true;
+                                }
+                                
+                                index++;
                             }
 
                             radioButtonGroup.RegisterValueChangedCallback(evt => { SetData(evt.newValue); });
@@ -738,6 +747,8 @@ namespace GraphViewExtension
                             Toggle toggle = new Toggle();
                             toggle.style.width = StyleKeyword.Auto;
                             toggle.Children().FirstOrDefault().style.flexGrow = 0;
+                            
+                            toggle.value = (bool)value;
 
                             toggle.RegisterValueChangedCallback(evt => { SetData(evt.newValue); });
 
