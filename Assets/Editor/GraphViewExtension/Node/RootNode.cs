@@ -548,8 +548,13 @@ namespace GraphViewExtension
                     }
 
                     //设置值的委托函数
-                    SetFieldDelegate setValue =
+                    SetFieldDelegate setValue = 
                         (SetFieldDelegate)Delegate.CreateDelegate(typeof(SetFieldDelegate), field, "SetValue", false);
+
+                    void SetData(object o)
+                    {
+                        setValue(this, o);
+                    }
 
                     string[] extra = attr.GetExtra();
                     //创建UI
@@ -576,7 +581,7 @@ namespace GraphViewExtension
                             var fontChild = text.Children().FirstOrDefault().Children().FirstOrDefault();
                             fontChild.style.fontSize = _fontSize;
 
-                            text.RegisterValueChangedCallback(evt => { setValue(this, evt.newValue); });
+                            text.RegisterValueChangedCallback(evt => { SetData(evt.newValue); });
                             ele.Add(text);
                             break;
                         case NodeTypeEnum.Note:
@@ -618,7 +623,7 @@ namespace GraphViewExtension
                                 fontChild = child.Children().FirstOrDefault().Children().FirstOrDefault();
                                 fontChild.style.fontSize = _fontSize;
 
-                                note.RegisterValueChangedCallback((evt) => { setValue(this, evt.newValue); });
+                                note.RegisterValueChangedCallback((evt) => { SetData(evt.newValue); });
 
                                 note.RegisterCallback<FocusOutEvent>(evt => { UpdateNodeSize(); });
 
@@ -648,7 +653,7 @@ namespace GraphViewExtension
                             EnumField enumField = new EnumField(value as Enum);
                             enumField.style.flexGrow = 1;
 
-                            enumField.RegisterValueChangedCallback(evt => setValue(this, evt.newValue));
+                            enumField.RegisterValueChangedCallback(evt => SetData(evt.newValue));
 
                             ele.Add(enumField);
                             break;
@@ -679,7 +684,7 @@ namespace GraphViewExtension
 
                                 slider.RegisterValueChangedCallback(evt =>
                                 {
-                                    setValue(this, evt.newValue);
+                                    SetData(evt.newValue);
                                     num.text = evt.newValue.ToString();
                                 });
 
@@ -696,7 +701,7 @@ namespace GraphViewExtension
 
                                 slider.RegisterValueChangedCallback(evt =>
                                 {
-                                    setValue(this, evt.newValue);
+                                    SetData(evt.newValue);
                                     num.text = evt.newValue.ToString();
                                 });
 
@@ -726,7 +731,7 @@ namespace GraphViewExtension
                                 radioButtonGroup.Add(radio);
                             }
 
-                            radioButtonGroup.RegisterValueChangedCallback(evt => { setValue(this, evt.newValue); });
+                            radioButtonGroup.RegisterValueChangedCallback(evt => { SetData(evt.newValue); });
                             break;
                         case NodeTypeEnum.Toggle:
 
@@ -734,7 +739,7 @@ namespace GraphViewExtension
                             toggle.style.width = StyleKeyword.Auto;
                             toggle.Children().FirstOrDefault().style.flexGrow = 0;
 
-                            toggle.RegisterValueChangedCallback(evt => { setValue(this, evt.newValue); });
+                            toggle.RegisterValueChangedCallback(evt => { SetData(evt.newValue); });
 
                             ele.Add(toggle);
 
