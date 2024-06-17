@@ -424,34 +424,35 @@ namespace GraphViewExtension
 
         private void Save()
         {
-            string filePath = EditorUtility.SaveFilePanel("保存到本地", Application.dataPath + "/Json", "NewFile", "json");
-            
-            if (filePath != "")
+            if (_filePath == "")
             {
-                SetFilePath(filePath);
-                
-                List<GDataNode> list = SaveData();
-
-                List<SaveJson> listJson = new List<SaveJson>();
-
-                foreach (var data in list)
-                {
-                    listJson.Add(ToJson(data));
-                }
-
-                string jsonData = JsonConvert.SerializeObject(listJson);
-                
-                FileInfo myFile = new FileInfo(filePath); 
-                StreamWriter sw = myFile.CreateText();
-       
-                foreach (var s in jsonData) 
-                { 
-                    sw.Write(s); 
-                } 
-                sw.Close();
-                
-                _editorWindow.ShowNotification(new GUIContent("保存成功,路径为: " + filePath));
+                _filePath = EditorUtility.SaveFilePanel("保存到本地", Application.dataPath + "/Json", "NewFile", "json");
             }
+
+            SetFilePath(_filePath);
+
+            List<GDataNode> list = SaveData();
+
+            List<SaveJson> listJson = new List<SaveJson>();
+
+            foreach (var data in list)
+            {
+                listJson.Add(ToJson(data));
+            }
+
+            string jsonData = JsonConvert.SerializeObject(listJson);
+
+            FileInfo myFile = new FileInfo(_filePath);
+            StreamWriter sw = myFile.CreateText();
+
+            foreach (var s in jsonData)
+            {
+                sw.Write(s);
+            }
+
+            sw.Close();
+
+            _editorWindow.ShowNotification(new GUIContent("保存成功,路径为: " + _filePath));
         }
 
         private void Close()
