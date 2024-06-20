@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
+using AutoLayout;
 using Unity.Plastic.Newtonsoft.Json;
 using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
@@ -244,6 +246,7 @@ namespace GraphViewExtension
             node.RegistResize(this);
             node.SetSize(_defaultNodeSize);
             node.UpdateSize(size);
+            node.SetCurSize(size);
             AddElement(node);
             node.guid = guid;
             _allNodes.Add(guid, node);
@@ -378,9 +381,13 @@ namespace GraphViewExtension
             saveBtn.clicked += Save;
             var closeBtn = new ToolbarButton { text = "关闭" };
             closeBtn.clicked += Close;
+            var layoutBtn = new ToolbarButton { text = "自动布局" };
+            layoutBtn.clicked += Layout;
+            
             toolbar.Add(openBtn);
             toolbar.Add(saveBtn);
             toolbar.Add(closeBtn);
+            toolbar.Add(layoutBtn);
             Add(toolbar);
         }
 
@@ -432,6 +439,10 @@ namespace GraphViewExtension
             if (_filePath == "")
             {
                 _filePath = EditorUtility.SaveFilePanel("保存到本地", Application.dataPath + "/Json", "NewFile", "json");
+                if (_filePath == "")
+                {
+                    return;
+                }
             }
 
             SetFilePath(_filePath);
@@ -463,6 +474,21 @@ namespace GraphViewExtension
         private void Close()
         {
             ClearGraph();
+        }
+
+        private void Layout()
+        {
+            foreach (var node in _allNodes)
+            {
+                node.Value.UnSelected();
+            }
+
+            schedule.Execute(() =>
+            {
+                AutoLayoutUtils.hSpace = 100;
+                AutoLayoutUtils.vSpace = 30;
+                AutoLayoutUtils.Layout(_allNodes.First().Value);
+            }).StartingIn(1);
         }
 
         private void OnKeyUp(KeyUpEvent evt)

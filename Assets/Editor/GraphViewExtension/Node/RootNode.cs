@@ -152,7 +152,8 @@ namespace GraphViewExtension
             RegisterCallback<GeometryChangedEvent>(OnEnable);
         }
 
-        public override Port InstantiatePort(Orientation orientation, Direction direction, Port.Capacity capacity, Type type)
+        public override Port InstantiatePort(Orientation orientation, Direction direction, Port.Capacity capacity,
+            Type type)
         {
             var port = Port.Create<CommentEdge>(orientation, direction, capacity, type);
             return port;
@@ -214,6 +215,14 @@ namespace GraphViewExtension
             style.width = size.x;
             style.height = size.y;
             _defSize = size;
+        }
+
+        public void SetCurSize(Vector2 size)
+        {
+            _curSize.x += size.x;
+            _curSize.y += size.y;
+
+            _curSize = Vector2.Max(_curSize, _defSize);
         }
 
         /// <summary>
@@ -412,7 +421,7 @@ namespace GraphViewExtension
                 //判断改大小
                 if (IsResizeArea(evt.localMousePosition))
                 {
-                    _mouseOffset = evt.mousePosition - layout.size;
+                    _mouseOffset = evt.mousePosition;
                     _isResizing = true;
                     evt.StopPropagation();
                 }
@@ -427,8 +436,11 @@ namespace GraphViewExtension
         {
             if (_isResizing)
             {
-                Vector2 newSize = evt.mousePosition - _mouseOffset;
-                newSize = Vector2.Max(_defSize, newSize);
+                var scale = hierarchy.parent.worldTransform.m00;
+
+                Vector2 newSize = (evt.mousePosition - _mouseOffset) / scale;
+
+                Debug.Log(newSize);
                 // 更新节点的大小
                 UpdateSize(newSize);
 
@@ -444,7 +456,11 @@ namespace GraphViewExtension
         {
             if (_isResizing)
             {
-                Debug.Log(layout.size);
+                var scale = hierarchy.parent.worldTransform.m00;
+
+                Vector2 newSize = (evt.mousePosition - _mouseOffset) / scale;
+                SetCurSize(newSize);
+
                 _isResizing = false;
                 evt.StopPropagation();
             }
@@ -555,7 +571,7 @@ namespace GraphViewExtension
                     }
 
                     //设置值的委托函数
-                    SetFieldDelegate setValue = 
+                    SetFieldDelegate setValue =
                         (SetFieldDelegate)Delegate.CreateDelegate(typeof(SetFieldDelegate), field, "SetValue", false);
 
                     void SetData(object o)
@@ -695,7 +711,7 @@ namespace GraphViewExtension
                                     SetData(evt.newValue);
                                     num.text = evt.newValue.ToString();
                                 });
-                                
+
                                 slider.value = (int)value;
                                 num.text = value.ToString();
 
@@ -714,7 +730,7 @@ namespace GraphViewExtension
                                     SetData(evt.newValue);
                                     num.text = evt.newValue.ToString();
                                 });
-                                
+
                                 slider.value = (float)value;
                                 num.text = value.ToString();
 
@@ -749,7 +765,7 @@ namespace GraphViewExtension
                                 {
                                     radio.value = true;
                                 }
-                                
+
                                 index++;
                             }
 
@@ -827,16 +843,22 @@ namespace GraphViewExtension
         /// <param name="size"></param>
         public void UpdateSize(Vector2 size)
         {
-            style.width = size.x;
-            style.height = size.y;
+            Vector2 temp;
             if (_isBordered)
             {
-                _curSize = size - new Vector2(_borderOffset, _borderOffset);
+                Vector2 border = new Vector2(_borderOffset, _borderOffset);
+                temp = _curSize + size + border;
+                temp = Vector2.Max(_defSize + border,temp);
             }
             else
             {
-                _curSize = size;
+                temp = _curSize + size;
+                temp = Vector2.Max(_defSize,temp);
             }
+
+            
+            style.width = temp.x;
+            style.height = temp.y;
         }
 
         /// <summary>
