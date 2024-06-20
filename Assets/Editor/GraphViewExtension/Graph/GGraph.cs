@@ -222,6 +222,8 @@ namespace GraphViewExtension
             return compatiblePorts;
         }
 
+        
+        
         public RootNode CreateNode(Type type, Vector2 position)
         {
             RootNode node = Activator.CreateInstance(type) as RootNode;
@@ -253,9 +255,11 @@ namespace GraphViewExtension
         }
 
 
-        public Edge MakeEdge(Port oput, Port iput)
+        public Edge MakeEdge(Port oput, Port iput,int index)
         {
-            var edge = new Edge { output = oput, input = iput };
+            Debug.Log("创建Edge");
+            var edge = new CommentEdge() { output = oput, input = iput };
+            // edge.SetComment("索引" + index);
             edge?.input.Connect(edge);
             edge?.output.Connect(edge);
             AddElement(edge);
@@ -340,6 +344,7 @@ namespace GraphViewExtension
 
         public void OpenData(List<GDataNode> datas, RootNode parent = null)
         {
+            int index = 0;
             foreach (var data in datas)
             {
                 Type type = Type.GetType(data.GetNodeType());
@@ -357,7 +362,7 @@ namespace GraphViewExtension
                 if (parent != null)
                 {
                     //连线
-                    MakeEdge(parent.GetOutput(), newNode.GetInput());
+                    MakeEdge(parent.GetOutput(), newNode.GetInput(),index);
                 }
 
                 OpenData(data.GetChildren(), newNode);

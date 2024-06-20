@@ -152,6 +152,12 @@ namespace GraphViewExtension
             RegisterCallback<GeometryChangedEvent>(OnEnable);
         }
 
+        public override Port InstantiatePort(Orientation orientation, Direction direction, Port.Capacity capacity, Type type)
+        {
+            var port = Port.Create<CommentEdge>(orientation, direction, capacity, type);
+            return port;
+        }
+
         /// <summary>
         /// 界面改变回调
         /// </summary>
