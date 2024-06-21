@@ -11,12 +11,21 @@ namespace AutoLayout
 
         public static AutoLayoutDirection direction = AutoLayoutDirection.Verticle;
 
-        public static void Layout(RootNode data)
+        public static float Layout(RootNode data,float bonus = 0)
         {
             //创建根节点
             NodeData root = GenerateNode(data);
             FirstStep(root, 0);
             SecondStep(root);
+
+            if (direction == AutoLayoutDirection.Horizontal)
+            {
+                root.MoveRight(bonus);
+                return root.GetTotalWidth();
+            }
+
+            root.MoveBottom(bonus);
+            return root.GetTotalHeight();
         }
 
         private static NodeData GenerateNode(RootNode data)

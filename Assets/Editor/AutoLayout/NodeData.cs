@@ -12,10 +12,7 @@ namespace AutoLayout
 
         public float x
         {
-            get
-            {
-                return _x;
-            }
+            get { return _x; }
             set
             {
                 _x = value;
@@ -27,17 +24,14 @@ namespace AutoLayout
 
         public float y
         {
-            get
-            {
-                return _y;
-            }
+            get { return _y; }
             set
             {
                 _y = value;
                 data.style.top = value + vSpace;
             }
         }
-        
+
         private float _y;
 
         public float MinX => x;
@@ -81,7 +75,7 @@ namespace AutoLayout
                 child.MoveRight(dis);
             }
         }
-        
+
         public void MoveBottom(float dis)
         {
             y += dis;
@@ -90,6 +84,64 @@ namespace AutoLayout
                 child.MoveBottom(dis);
             }
         }
+
+        public float GetTotalWidth()
+        {
+            float minX = GetMinX();
+            float maxX = GetMaxX();
+            return maxX - minX;
+        }
+
+        public float GetTotalHeight()
+        {
+            float minY = GetMinY();
+            float maxY = GetMaxY();
+            return maxY - minY;
+        }
+
+        private float GetMinX()
+        {
+            float minX = MinX;
+            foreach (var child in children)
+            {
+                minX = Mathf.Min(minX, child.GetMinX());
+            }
+
+            return minX;
+        }
+        
+        private float GetMaxX()
+        {
+            float maxX = MaxX;
+            foreach (var child in children)
+            {
+                maxX = Mathf.Max(maxX, child.GetMaxX());
+            }
+
+            return maxX;
+        }
+        
+        private float GetMinY()
+        {
+            float minY = MinY;
+            
+            foreach (var child in children)
+            {
+                minY = Mathf.Min(minY, child.GetMinY());
+            }
+
+            return minY;
+        }
+        
+        private float GetMaxY()
+        {
+            float maxY = MaxY;
+            foreach (var child in children)
+            {
+                maxY = Mathf.Max(maxY, child.GetMaxY());
+            }
+
+            return maxY;
+        }
     }
 }
-

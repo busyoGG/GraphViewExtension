@@ -169,6 +169,7 @@ namespace GraphViewExtension
                                 isInput = true;
                                 break;
                             }
+
                             currentSelection = currentSelection.parent;
                         }
 
@@ -183,8 +184,9 @@ namespace GraphViewExtension
                         else
                         {
                             if (isInput) return;
-                            
-                            if (_clickNode != null && currentSelection != _clickNode && currentSelection is not RootNode)
+
+                            if (_clickNode != null && currentSelection != _clickNode &&
+                                currentSelection is not RootNode)
                             {
                                 _clickNode.UnSelected();
                                 _clickNode = null;
@@ -224,8 +226,7 @@ namespace GraphViewExtension
             return compatiblePorts;
         }
 
-        
-        
+
         public RootNode CreateNode(Type type, Vector2 position)
         {
             RootNode node = Activator.CreateInstance(type) as RootNode;
@@ -245,8 +246,8 @@ namespace GraphViewExtension
             node.SetPosition(new Rect(position, Vector2.zero));
             node.RegistResize(this);
             node.SetSize(_defaultNodeSize);
-            node.UpdateSize(size);
             node.SetCurSize(size);
+            node.UpdateSize(Vector2.zero);
             AddElement(node);
             node.guid = guid;
             _allNodes.Add(guid, node);
@@ -258,7 +259,7 @@ namespace GraphViewExtension
         }
 
 
-        public Edge MakeEdge(Port oput, Port iput,int index)
+        public Edge MakeEdge(Port oput, Port iput, int index)
         {
             Debug.Log("创建Edge");
             var edge = new CommentEdge() { output = oput, input = iput };
@@ -278,7 +279,7 @@ namespace GraphViewExtension
             }
 
             _allNodes.Clear();
-            
+
             _isOpen = false;
 
             _filePath = "";
@@ -294,13 +295,14 @@ namespace GraphViewExtension
             // 判断元素是否是BaseField<T>或其派生类的实例
             return HasBaseField(element.GetType());
         }
-        
+
         bool HasBaseField(Type type)
         {
             if (type.Name.IndexOf("BaseField") != -1)
             {
                 return true;
             }
+
             // 检查当前类型的基类的字段
             if (type.BaseType != null)
             {
@@ -359,13 +361,13 @@ namespace GraphViewExtension
                 RootNode newNode = CreateNode(type, nodeData.guid,
                     new Vector2(float.Parse(pos[0]), float.Parse(pos[1])),
                     new Vector2(float.Parse(size[0]), float.Parse(size[1])));
-                
+
                 newNode.SetData(nodeData);
 
                 if (parent != null)
                 {
                     //连线
-                    MakeEdge(parent.GetOutput(), newNode.GetInput(),index);
+                    MakeEdge(parent.GetOutput(), newNode.GetInput(), index);
                 }
 
                 OpenData(data.GetChildren(), newNode);
@@ -383,7 +385,7 @@ namespace GraphViewExtension
             closeBtn.clicked += Close;
             var layoutBtn = new ToolbarButton { text = "自动布局" };
             layoutBtn.clicked += Layout;
-            
+
             toolbar.Add(openBtn);
             toolbar.Add(saveBtn);
             toolbar.Add(closeBtn);
@@ -406,7 +408,7 @@ namespace GraphViewExtension
                     return;
                 }
             }
-            
+
             string filePath = EditorUtility.OpenFilePanel("打开ScriptableObject", "Assets/Json", "json");
 
             if (filePath != "")
@@ -417,9 +419,10 @@ namespace GraphViewExtension
                 while (sr.ReadLine() is { } nextLine)
                 {
                     jsonData += nextLine;
-                } 
+                }
+
                 sr.Close();
-                
+
                 List<SaveJson> json = JsonConvert.DeserializeObject<List<SaveJson>>(jsonData);
 
                 List<GDataNode> list = new List<GDataNode>();
@@ -428,7 +431,7 @@ namespace GraphViewExtension
                 {
                     list.Add(ToGDataNode(data));
                 }
-                
+
                 SetFilePath(filePath);
                 OpenData(list);
             }
@@ -487,7 +490,16 @@ namespace GraphViewExtension
             {
                 AutoLayoutUtils.hSpace = 100;
                 AutoLayoutUtils.vSpace = 30;
-                AutoLayoutUtils.Layout(_allNodes.First().Value);
+
+                float bonus = 0;
+
+                foreach (var data in _allNodes)
+                {
+                    if (!data.Value.GetInput().connections.Any())
+                    {
+                        bonus = AutoLayoutUtils.Layout(data.Value, bonus);
+                    }
+                }
             }).StartingIn(1);
         }
 

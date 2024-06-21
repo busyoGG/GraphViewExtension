@@ -2,6 +2,7 @@ using System;
 using System.Dynamic;
 using System.Linq;
 using System.Reflection;
+using AutoLayout;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -219,8 +220,16 @@ namespace GraphViewExtension
 
         public void SetCurSize(Vector2 size)
         {
-            _curSize.x += size.x;
-            _curSize.y += size.y;
+            if (_curSize.Equals(Vector2.zero))
+            {
+                _curSize.x += _defSize.x + size.x;
+                _curSize.y += _defSize.y + size.y;
+            }
+            else
+            {
+                _curSize.x += size.x;
+                _curSize.y += size.y;
+            }
 
             _curSize = Vector2.Max(_curSize, _defSize);
         }
@@ -461,6 +470,7 @@ namespace GraphViewExtension
                 SetCurSize(newSize);
 
                 _isResizing = false;
+                MarkDirtyRepaint();
                 evt.StopPropagation();
             }
 
