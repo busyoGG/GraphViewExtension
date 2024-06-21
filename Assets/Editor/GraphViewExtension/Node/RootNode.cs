@@ -440,7 +440,6 @@ namespace GraphViewExtension
 
                 Vector2 newSize = (evt.mousePosition - _mouseOffset) / scale;
 
-                Debug.Log(newSize);
                 // 更新节点的大小
                 UpdateSize(newSize);
 
@@ -843,16 +842,17 @@ namespace GraphViewExtension
         /// <param name="size"></param>
         public void UpdateSize(Vector2 size)
         {
+            Vector2 cur = _curSize.Equals(Vector2.zero) ? _defSize : _curSize;
             Vector2 temp;
             if (_isBordered)
             {
                 Vector2 border = new Vector2(_borderOffset, _borderOffset);
-                temp = _curSize + size + border;
+                temp = cur + size + border;
                 temp = Vector2.Max(_defSize + border,temp);
             }
             else
             {
-                temp = _curSize + size;
+                temp = cur + size;
                 temp = Vector2.Max(_defSize,temp);
             }
 

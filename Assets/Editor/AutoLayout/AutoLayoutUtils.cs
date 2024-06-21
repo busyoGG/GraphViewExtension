@@ -83,86 +83,83 @@ namespace AutoLayout
                     direction = direction, left = new List<NodeData>() { node }, right = new List<NodeData>() { node }
                 };
             }
-            else
+
+            NodeThread left = null;
+
+            //子节点索引
+            int i = 0;
+            int index = 0;
+
+            //上一节点
+            NodeData last = node.children[0];
+
+            foreach (var child in node.children)
             {
-                NodeThread left = null;
-
-                float subDis = 0;
-
-                //子节点索引
-                int index = 0;
-                int i = 0;
-
-                //上一节点
-                NodeData last = node.children[0];
-
-                foreach (var child in node.children)
+                if (left == null)
                 {
-                    if (left == null)
-                    {
-                        left = SecondStep(child);
-                    }
-                    else
-                    {
-                        var right = SecondStep(child);
-                        float moveDis = left.CheckMove(right);
-                        if (direction == AutoLayoutDirection.Horizontal)
-                        {
-                            child.MoveRight(moveDis);
-                            //平均间距
-                            float d = child.MinX - last.MaxX;
-                            if (d > 0)
-                            {
-                                float bonus = d / (i - index);
-
-                                for (int j = index + 1; j < i; j++)
-                                {
-                                    node.children[j].MoveRight(bonus * j);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            child.MoveBottom(moveDis);
-                            //平均间距
-                            float d = child.MinY - last.MaxY;
-                            if (d > 0)
-                            {
-                                float bonus = d / (i - index);
-
-                                for (int j = index + 1; j < i; j++)
-                                {
-                                    node.children[j].MoveBottom(bonus * j);
-                                }
-                            }
-                        }
-                        
-                        if (index + 1 < i)
-                        {
-                            index = i;
-                        }
-
-                        left.SetLeftRight(right);
-                        subDis = moveDis;
-                    }
-
-                    last = child;
-                    i++;
-                }
-
-                if (direction == AutoLayoutDirection.Horizontal)
-                {
-                    node.x += (subDis + node.children[0].MinX) * 0.5f;
+                    left = SecondStep(child);
                 }
                 else
                 {
-                    node.y += (subDis + node.children[0].MinY) * 0.5f;
+                    var right = SecondStep(child);
+                    float moveDis = left.CheckMove(right);
+                    float d = 0;
+                    if (direction == AutoLayoutDirection.Horizontal)
+                    {
+                        child.MoveRight(moveDis);
+                        //平均间距
+                        d = child.MinX - last.MaxX;
+                        if (d > 0)
+                        {
+                            float bonus = d / (i - index);
+
+                            for (int j = index + 1; j < i; j++)
+                            {
+                                node.children[j].MoveRight(bonus * (j - index));
+                            }
+
+                            index = i;
+                        }
+                    }
+                    else
+                    {
+                        child.MoveBottom(moveDis);
+                        //平均间距
+                        d = child.MinY - last.MaxY;
+                        if (d > 0)
+                        {
+                            float bonus = d / (i - index);
+
+                            for (int j = index + 1; j < i; j++)
+                            {
+                                node.children[j].MoveBottom(bonus * (j - index));
+                            }
+                            
+                            index = i;
+                        }
+                    }
+
+                    left.SetLeftRight(right);
                 }
 
-                left.left.Insert(0, node);
-                left.right.Insert(0, node);
-                return left;
+                last = child;
+                i++;
             }
+
+            
+            if (direction == AutoLayoutDirection.Horizontal)
+            {
+                
+                node.x += (node.children[0].MinX + node.children[^1].MaxX) * 0.5f - node.width * 0.5f;
+            }
+            else
+            {
+                node.y += (node.children[0].MinY + node.children[^1].MaxY) * 0.5f - node.height * 0.5f;
+            }
+
+            left.left.Insert(0, node);
+            left.right.Insert(0, node);
+            return left;
         }
     }
 }

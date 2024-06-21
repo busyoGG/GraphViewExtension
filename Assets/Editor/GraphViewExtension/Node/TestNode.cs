@@ -17,7 +17,7 @@ namespace GraphViewExtension
         private float _slider = 0;
 
         [GraphNode(NodeTypeEnum.Slide, "Int", "0", "1"), GName("整型滑动条")]
-        private float _sliderInt = 0;
+        private int _sliderInt = 0;
 
         [GraphNode(NodeTypeEnum.Radio, "选项1", "选项2")]
         private int _radio;
