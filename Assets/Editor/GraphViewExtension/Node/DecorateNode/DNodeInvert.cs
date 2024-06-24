@@ -2,7 +2,7 @@
 
 namespace GraphViewExtension
 {
-    public class DNodeReverse: RootNode
+    public class DNodeInvert: RootNode
     {
         [GraphNode(NodeTypeEnum.Note)]
         private string _note = "返回相反的结果";
